@@ -14,7 +14,7 @@ if [ "$answer" != "${answer#[Yy]}" ] ;then
 
     # Create necessary Docker volume
     echo "Creating Docker volume..."
-    docker volume create --name=transcriptionstream
+    docker volume create --name=transcribe-ui
 
     # Start the docker-compose services
     echo "Starting services with docker-compose..."
@@ -23,7 +23,7 @@ if [ "$answer" != "${answer#[Yy]}" ] ;then
 # If running ts-gpt ollama container, enable this
 #    # Get the model installed on ts-gpt (requires curl)
     echo "Downloading  mistral model"
-    curl -X POST http://localhost:11434/api/pull -d '{"name": "transcriptionstream/transcriptionstream"}'
+    curl -X POST http://localhost:11434/api/pull -d '{"name": "transcribe-ui/transcribe-ui"}'
 
     # Re-attach to compose logs
     echo "Re-attaching to console logs"

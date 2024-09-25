@@ -84,7 +84,7 @@ chmod +x run.sh;
 
 ### SSH Server Access
 - **Port:** 22222
-- **User:** `transcriptionstream`
+- **User:** `transcribe-ui`
 - **Password:** `nomoresaastax`
 - **Usage:** Place audio files in `transcribe` or `diarize`. Completed files are stored in `transcribed`.
 
@@ -108,7 +108,7 @@ chmod +x run.sh;
 
 ### Customization and Troubleshooting
 - Update variables in the .env file
-- Change the password for `transcriptionstream` in the `ts-gpu` Dockerfile.
+- Change the password for `transcribe-ui` in the `ts-gpu` Dockerfile.
 - Update the Ollama api endpoint IP in .env if you want to use a different endpoint
 - Update the secret in .env for ts-web
 - Use .env to choose which models are included in the initial build.

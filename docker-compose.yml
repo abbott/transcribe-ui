@@ -6,8 +6,8 @@ services:
   init:
     image: busybox
     volumes:
-      - transcriptionstream:/transcriptionstream
-    command: /bin/sh -c "mkdir -p /transcriptionstream/incoming/transcribe /transcriptionstream/incoming/diarize /transcriptionstream/transcribed /transcriptionstream/scripts && chown -R transcriptionstream:transcriptionstream /transcriptionstream/incoming"
+      - transcribe-ui:/transcribe-ui
+    command: /bin/sh -c "mkdir -p /transcribe-ui/incoming/transcribe /transcribe-ui/incoming/diarize /transcribe-ui/transcribed /transcribe-ui/scripts && chown -R transcribe-ui:transcribe-ui /transcribe-ui/incoming"
 
 
 # Start up the worker container
@@ -25,9 +25,9 @@ services:
     ports:
       - "22222:22"
     volumes:
-      - transcriptionstream:/transcriptionstream
-      - transcriptionstream:/home/transcriptionstream
-#      - transcriptionstream-scripts:/root/scripts
+      - transcribe-ui:/transcribe-ui
+      - transcribe-ui:/home/transcribe-ui
+#      - transcribe-ui-scripts:/root/scripts
 
     networks:
       ts_private_network:
@@ -50,7 +50,7 @@ services:
     ports:
       - "5006:5000"
     volumes:
-      - transcriptionstream:/transcriptionstream
+      - transcribe-ui:/transcribe-ui
     networks:
       ts_private_network:
         ipv4_address: 172.30.1.2
@@ -66,8 +66,8 @@ services:
     ports:
       - "7700:7700"
     volumes:
-      - transcriptionstream:/transcriptionstream
-      - transcriptionstream:/meili_data
+      - transcribe-ui:/transcribe-ui
+      - transcribe-ui:/meili_data
     networks:
       ts_private_network:
         ipv4_address: 172.30.1.12
@@ -82,7 +82,7 @@ services:
     ports:
       - "11434:11434"
     volumes:
-      - transcriptionstream:/root/.ollama
+      - transcribe-ui:/root/.ollama
     networks:
       ts_private_network:
         ipv4_address: 172.30.1.3
@@ -105,8 +105,8 @@ networks:
 
 
 volumes:
-  transcriptionstream:
+  transcribe-ui:
     external: true
-#  transcriptionstream-scripts:
+#  transcribe-ui-scripts:
 #    external: true
 
