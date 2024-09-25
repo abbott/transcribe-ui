@@ -11,15 +11,43 @@ read answer
 # Check if the user input is 'y' or 'Y'
 if [ "$answer" != "${answer#[Yy]}" ] ;then
 
+    # Adjust the path to the .env file
+    env_file=".env"
+
+    # Check if the .env file exists
+    if [ ! -f "$env_file" ]; then
+        echo "Error: .env file does not exist at $env_file"
+        exit 1
+    fi
+
+    # Init disable_ollama
+    disable_ollama=""
+
+    # Read each line from .env, ignoring comments and empty lines
+    while IFS= read -r line; do
+        if [[ $line =~ ^DISABLE_OLLAMA= ]]; then
+            disable_ollama="${line#*=}" # Extract the value after '='
+            break
+        fi
+    done < "$env_file"
+
+    # Check if DISABLE_OLLAMA was found and process accordingly
+    if [ -n "$disable_ollama" ]; then
+        echo "DISABLE_OLLAMA is set to $disable_ollama"
+    fi
+
     # Start the docker compose services
     echo "Starting services with docker compose..."
     docker compose up --detach
 
-# If running ts-gpt ollama container, enable this
-#    # Get the model installed on ts-gpt (requires curl)
-    echo "Downloading  mistral model"
-    curl -X POST http://localhost:11434/api/pull -d '{"name": "transcribe-ui/transcribe-ui"}'
-
+    # Get the model installed on ts-gpt (requires curl)
+    # Check if DISABLE_OLLAMA is set to "true"
+    if [ "$disable_ollama" != "true" ]; then
+        echo "Downloading transcribe-ui Mistral model"
+        curl -X POST http://172.30.1.3:11434/api/pull -d '{"name": "transcribe-ui/transcribe-ui"}'
+    else
+        echo "DISABLE_OLLAMA is true, skipping Mistral download."
+    fi
     # Re-attach to compose logs
     echo "Re-attaching to console logs"
     docker compose logs -f
