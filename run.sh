@@ -48,6 +48,7 @@ if [ "$answer" != "${answer#[Yy]}" ] ;then
     else
         echo "DISABLE_OLLAMA is true, skipping Mistral download."
     fi
+    
     # Re-attach to compose logs
     echo "Re-attaching to console logs"
     docker compose logs -f
