@@ -47,7 +47,7 @@ COPY ts-summarize.py /root/scripts/
 COPY index-single.py /root/scripts/
 COPY auto-summary.py /root/scripts/
 
-# Create a new user and setup the environment
+# Create a new user and setup the environment -- CHANGE PASSWORD "nomoresaastax"
 RUN useradd -m -p $(openssl passwd -1 nomoresaastax) transcribe-ui \
  && mkdir -p /home/transcribe-ui/incoming \
  && mkdir -p /home/transcribe-ui/transcribed \

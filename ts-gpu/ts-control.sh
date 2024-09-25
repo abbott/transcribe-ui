@@ -1,5 +1,6 @@
 #!/bin/bash
 # Process control example with different limits for multiple processes
+
 # Source .env from one directory up
 if [ -f "../.env" ]; then 
   export $(grep -v '^#' ../.env | xargs -d '\n')
