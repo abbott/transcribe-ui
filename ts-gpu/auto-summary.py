@@ -4,9 +4,9 @@ import pwd
 import grp
 
 def scan_and_summarize(base_directory):
-    # Get the user and group ID for 'transcriptionstream'
-    uid = pwd.getpwnam('transcriptionstream').pw_uid
-    gid = grp.getgrnam('transcriptionstream').gr_gid
+    # Get the user and group ID for 'transcribe-ui'
+    uid = pwd.getpwnam('transcribe-ui').pw_uid
+    gid = grp.getgrnam('transcribe-ui').gr_gid
 
     # Get the OLLAMA_ENDPOINT_IP from environment variables, and fallback default
     ollama_endpoint_ip = os.environ.get('OLLAMA_ENDPOINT_IP', '172.30.1.3')
@@ -38,4 +38,4 @@ def scan_and_summarize(base_directory):
                         os.chown(summary_file, uid, gid)
 
 # Example usage
-scan_and_summarize('/transcriptionstream/transcribed')
+scan_and_summarize('/transcribe-ui/transcribed')

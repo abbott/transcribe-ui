@@ -9,8 +9,8 @@
 ##  will be automatically created for transcriptions missing them.
 
 # Define the root directory and subdirectories
-root_dir="/transcriptionstream/incoming/"
-transcribed_dir="/transcriptionstream/transcribed/"
+root_dir="/transcribe-ui/incoming/"
+transcribed_dir="/transcribe-ui/transcribed/"
 sub_dirs=("diarize" "transcribe")
 
 # Define supported audio file extensions
@@ -62,8 +62,8 @@ for sub_dir in "${sub_dirs[@]}"; do
             # ts-gpt can be enabled in the docker-compose.yml - if using ts-gpt, your url should be http://172.30.1.3:11434
         #    python3 /root/scripts/ts-summarize.py "$new_dir" http://172.30.1.3:11434
 
-            # Change the owner of the files to the user transcriptionstream
-            chown -R transcriptionstream:transcriptionstream "$new_dir"
+            # Change the owner of the files to the user transcribe-ui
+            chown -R transcribe-ui:transcribe-ui "$new_dir"
 
             # Drop messages to the console
             echo "--- done processing $audio_file - output placed in $new_dir" >> /proc/1/fd/1

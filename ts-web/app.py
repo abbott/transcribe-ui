@@ -8,8 +8,8 @@ app = Flask(__name__)
 # Use the TS_WEB_SECRET_KEY environment variable as the secret key, and the fallback
 app.secret_key = os.environ.get('TS_WEB_SECRET_KEY', 'some_secret_key')
 
-TRANSCRIBED_FOLDER = '/transcriptionstream/transcribed'
-UPLOAD_FOLDER = '/transcriptionstream/incoming'
+TRANSCRIBED_FOLDER = '/transcribe-ui/transcribed'
+UPLOAD_FOLDER = '/transcribe-ui/incoming'
 ALLOWED_EXTENSIONS = set(['mp3', 'wav', 'ogg', 'flac'])
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
