@@ -1,4 +1,3 @@
-version: '3.8'
 # transcription stream startup
 #
 # make sure the volumes exist

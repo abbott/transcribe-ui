@@ -48,9 +48,9 @@ if [ "$answer" != "${answer#[Yy]}" ] ;then
     echo "Creating Docker volumes..."
     docker volume create --name=transcribe-ui
 
-    # Start the docker-compose services
-    echo "Starting services with docker-compose..."
-    docker-compose up --detach
+    # Start the docker compose services
+    echo "Starting services with docker compose..."
+    docker compose up --detach
 
 #Uncomment to enable ts-gpu local ollama container running mistral
    # Get the model installed on ts-gpt (requires curl)
@@ -60,7 +60,7 @@ if [ "$answer" != "${answer#[Yy]}" ] ;then
 
     # Re-attach to compose logs
     echo "Re-attaching to console logs"
-    docker-compose logs -f
+    docker compose logs -f
 
     echo "All services are up and running."
 else

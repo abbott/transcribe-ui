@@ -16,9 +16,9 @@ Expects an nvidia gpu.
  #ts-gpu (this is going to take a while and end up around 13.8GB - while large, it contains the needed models to run offline)
    docker build -t ts-gpu:latest .
 
--Run the service by kicking off the docker-compose. The console will provide plenty of updates for running jobs, and lots of noisy
+-Run the service by kicking off the docker compose. The console will provide plenty of updates for running jobs, and lots of noisy
  info from ts-web.
-   docker-compose -p transcribe-ui up
+   docker compose -p transcribe-ui up
 
 ### Notes #######
 ports: 22222/ssh 5006/http
