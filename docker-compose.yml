@@ -1,37 +1,25 @@
-# transcription stream startup
-#
-# make sure the volumes exist
 services:
-  init:
-    image: busybox
-    volumes:
-      - transcribe-ui:/transcribe-ui
-    command: /bin/sh -c "mkdir -p /transcribe-ui/incoming/transcribe /transcribe-ui/incoming/diarize /transcribe-ui/transcribed /transcribe-ui/scripts && chown -R transcribe-ui:transcribe-ui /transcribe-ui/incoming"
-
-
-# Start up the worker container
+  # Start up the worker container
   ts_transcription_service:
     image: ts-gpu:latest
-    environment:
-      - DIARIZATION_MODEL=${DIARIZATION_MODEL}
-      - TRANSCRIPTION_MODEL=${TRANSCRIPTION_MODEL}
-      - MAX_CONCURRENT_TRANSFORMS=${MAX_CONCURRENT_TRANSFORMS}
-      - MAX_CONCURRENT_SUMMARIES=${MAX_CONCURRENT_SUMMARIES}
-      - OLLAMA_ENDPOINT_IP=${OLLAMA_ENDPOINT_IP}
-      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+    build:
+      context: ./ts-gpu  # Set the build context to the `ts-gpu` directory
+      dockerfile: Dockerfile  # Use the Dockerfile in `ts-gpu`
+    entrypoint: ["/usr/local/bin/entrypoint.sh"]
+    env_file:
+      - .env
     container_name: ts-gpu
     shm_size: 6gb
-    ports:
-      - "22222:22"
+    # ports:
+    #   - "2230:22"
     volumes:
-      - transcribe-ui:/transcribe-ui
-      - transcribe-ui:/home/transcribe-ui
-#      - transcribe-ui-scripts:/root/scripts
-
+      - ./ts-gpu/scripts:/transcribe-ui/scripts
+      - ${LOCAL_DIRECTORY:-./data}/ts-shared:/transcribe-ui
+      - ${LOCAL_DIRECTORY:-./data}/ts-gpu-home/incoming:/home/transcribe-ui/incoming
+      - ${LOCAL_DIRECTORY:-./data}/ts-gpu-home/transcribed:/home/transcribe-ui/transcribed
     networks:
       ts_private_network:
         ipv4_address: 172.30.1.5
-
     deploy:
       resources:
         reservations:
@@ -40,23 +28,28 @@ services:
               count: 1
               capabilities: [gpu]
 
-# Start up the web front end
+  # Start up the web front end
   ts_web_service:
-    image: ts-web
-    environment:
-      - TS_WEB_SECRET_KEY=${TS_WEB_SECRET_KEY}
+    image: ts-web:latest
+    build:
+      context: ./ts-web  # Set the build context to the `ts-gpu` directory
+      dockerfile: Dockerfile  # Use the Dockerfile in `ts-gpu`
+    env_file:
+      - .env
     container_name: ts-web
     ports:
       - "5006:5000"
     volumes:
-      - transcribe-ui:/transcribe-ui
+      - ${LOCAL_DIRECTORY:-./data}/ts-shared:/transcribe-ui
     networks:
       ts_private_network:
         ipv4_address: 172.30.1.2
 
-# Start up MeiliSearch
+  # Start up MeiliSearch
   ts_meilisearch_service:
     image: getmeili/meilisearch
+    env_file:
+      - .env
     environment:
       - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
       - MEILI_HTTP_CORS_ORIGINS=http://172.30.1.11:5000
@@ -65,34 +58,32 @@ services:
     ports:
       - "7700:7700"
     volumes:
-      - transcribe-ui:/transcribe-ui
-      - transcribe-ui:/meili_data
+      - ${LOCAL_DIRECTORY:-./data}/ts-shared:/transcribe-ui # Shared directory for transcriptions
+      - ${LOCAL_DIRECTORY:-./data}/ts-search:/meili_data # Separate data directory for MeiliSearch
     networks:
       ts_private_network:
         ipv4_address: 172.30.1.12
 
-
-  # # if you want to run ollama locally and have enough vram uncomment this section
-  # # Startup ts-gpt
-  # ts_gpt_service:
-  #   image: ollama/ollama
-  #   container_name: ts-gpt
-  #   ports:
-  #     - "11434:11434"
-  #   volumes:
-  #     - transcribe-ui:/root/.ollama
-  #   networks:
-  #     ts_private_network:
-  #       ipv4_address: 172.30.1.3
-
-  #   deploy:
-  #     resources:
-  #       reservations:
-  #         devices:
-  #           - driver: nvidia
-  #             count: 1
-  #             capabilities: [gpu]
-
+  #Uncomment if you want to run ollama locally and have enough VRAM
+  ts_gpt_service:
+    image: ollama/ollama
+    env_file:
+      - .env
+    container_name: ts-gpt
+    ports:
+      - "11436:11434"
+    volumes:
+      - ${LOCAL_DIRECTORY:-./data}/ts-gpt:/root/.ollama
+    networks:
+      ts_private_network:
+        ipv4_address: 172.30.1.3
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
 
 networks:
   ts_private_network:
@@ -100,11 +91,6 @@ networks:
       config:
         - subnet: 172.30.0.0/16
 
-
-
 volumes:
   transcribe-ui:
     external: true
-#  transcribe-ui-scripts:
-#    external: true
-

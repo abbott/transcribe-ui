@@ -6,20 +6,25 @@ from datetime import datetime
 
 app = Flask(__name__)
 # Use the TS_WEB_SECRET_KEY environment variable as the secret key, and the fallback
-app.secret_key = os.environ.get('TS_WEB_SECRET_KEY', 'some_secret_key')
+app.secret_key = os.getenv('TS_WEB_SECRET_KEY', 'some_secret_key')
 
-TRANSCRIBED_FOLDER = '/transcribe-ui/transcribed'
-UPLOAD_FOLDER = '/transcribe-ui/incoming'
-ALLOWED_EXTENSIONS = set(['mp3', 'wav', 'ogg', 'flac'])
+# Use the PROJECT_ID environment variable from the .env file
+PROJECT_ID = os.getenv('PROJECT_ID', 'transcribe-ui') 
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# Use environment variables for paths, with defaults that utilize the PROJECT_ID variable
+APP_DIR = os.getenv('APP_DIR', f'/{PROJECT_ID}')
+UPLOAD_DIR = os.getenv('UPLOAD_DIR', f'{APP_DIR}/incoming')
+TRANSCRIBED_DIR = os.getenv('TRANSCRIBED_DIR', f'{APP_DIR}/transcribed')
+
+
+allowed_extensions = set(['mp3', 'wav', 'ogg', 'flac'])
+
+app.config['UPLOAD_DIR'] = UPLOAD_DIR
 
 session_start_time = datetime.now()
 
-
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
 @app.route('/')
 def index():
@@ -27,7 +32,7 @@ def index():
     session['alerted_folders'] = []
     session['session_start_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     
-    folder_paths = [os.path.join(TRANSCRIBED_FOLDER, f) for f in os.listdir(TRANSCRIBED_FOLDER) if os.path.isdir(os.path.join(TRANSCRIBED_FOLDER, f))]
+    folder_paths = [os.path.join(TRANSCRIBED_DIR, f) for f in os.listdir(TRANSCRIBED_DIR) if os.path.isdir(os.path.join(TRANSCRIBED_DIR, f))]
     
     # Filter folders to only include those containing an .srt file
     valid_folders = []
@@ -46,7 +51,7 @@ def load_files():
     if not folder:
         return jsonify(error='Folder not specified'), 400
     
-    folder_path = os.path.join(TRANSCRIBED_FOLDER, folder)
+    folder_path = os.path.join(TRANSCRIBED_DIR, folder)
     if not os.path.exists(folder_path):
         return jsonify(error='Folder does not exist'), 404
     
@@ -59,7 +64,7 @@ def load_files():
 
 @app.route('/get_file/<path:folder>/<path:filename>', methods=['GET'])
 def get_file(folder, filename):
-    folder_path = os.path.join(TRANSCRIBED_FOLDER, folder)
+    folder_path = os.path.join(TRANSCRIBED_DIR, folder)
     file_path = os.path.join(folder_path, filename)
     return send_file(file_path, as_attachment=True, download_name=filename)
 
@@ -74,7 +79,7 @@ def upload_file():
             return redirect(request.url)
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            file.save(os.path.join(app.config['UPLOAD_DIR'], filename))
             return render_template('upload.html', message="File uploaded successfully! Redirecting - you will be notified once the transcription is complete", redirect=True)
     return render_template('upload.html')
     
@@ -87,7 +92,7 @@ def upload_transcribe():
         return redirect(request.url)
     if file:
         filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], 'transcribe', filename))
+        file.save(os.path.join(app.config['UPLOAD_DIR'], 'transcribe', filename))
         return render_template('upload.html', message="File uploaded successfully to Transcribe!")
 
 @app.route('/upload_diarize', methods=['POST'])
@@ -99,14 +104,14 @@ def upload_diarize():
         return redirect(request.url)
     if file:
         filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], 'diarize', filename))
+        file.save(os.path.join(app.config['UPLOAD_DIR'], 'diarize', filename))
         return render_template('upload.html', message="File uploaded successfully to Diarize!")
 
 
 @app.route('/check_alert', methods=['GET'])
 def check_alert():
-    all_folders = [os.path.join(TRANSCRIBED_FOLDER, f) for f in os.listdir(TRANSCRIBED_FOLDER) if
-                   os.path.isdir(os.path.join(TRANSCRIBED_FOLDER, f))]
+    all_folders = [os.path.join(TRANSCRIBED_DIR, f) for f in os.listdir(TRANSCRIBED_DIR) if
+                   os.path.isdir(os.path.join(TRANSCRIBED_DIR, f))]
 
     alert_data = []
     for folder_path in all_folders:
@@ -132,7 +137,7 @@ def check_alert():
 
 @app.route('/delete_folder/<path:folder>', methods=['DELETE'])
 def delete_folder(folder):
-    folder_path = os.path.join(TRANSCRIBED_FOLDER, folder)
+    folder_path = os.path.join(TRANSCRIBED_DIR, folder)
     if not os.path.exists(folder_path):
         return jsonify(success=False, error='Folder does not exist'), 404
     

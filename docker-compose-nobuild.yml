@@ -1,97 +1,104 @@
 # transcription stream startup
 #
 # make sure the volumes exist
-services:
-  init:
-    image: busybox
-    volumes:
-      - transcribe-ui:/transcribe-ui
-    command: /bin/sh -c "mkdir -p /transcribe-ui/incoming/transcribe /transcribe-ui/incoming/diarize /transcribe-ui/transcribed /transcribe-ui/scripts && chown -R transcribe-ui:transcribe-ui /transcribe-ui/incoming"
+# services:
+#   init:
+#     image: busybox
+#     volumes:
+#       - ${LOCAL_DIRECTORY:-transcribe-ui}:/transcribe-ui      
+#     command: /bin/sh -c "mkdir -p /transcribe-ui/incoming/transcribe /transcribe-ui/incoming/diarize /transcribe-ui/transcribed /transcribe-ui/scripts"
 
 
 # Start up the worker container
-  ts_transcription_service:
-    image: transcribe-ui/ts-gpu:latest
-    environment:
-      - DIARIZATION_MODEL=${DIARIZATION_MODEL}
-      - TRANSCRIPTION_MODEL=${TRANSCRIPTION_MODEL}
-      - MAX_CONCURRENT_TRANSFORMS=${MAX_CONCURRENT_TRANSFORMS}
-      - MAX_CONCURRENT_SUMMARIES=${MAX_CONCURRENT_SUMMARIES}
-      - OLLAMA_ENDPOINT_IP=${OLLAMA_ENDPOINT_IP}
-      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
-    container_name: ts-gpu
-    shm_size: 6gb
-    ports:
-      - "22222:22"
-    volumes:
-      - transcribe-ui:/transcribe-ui
-      - transcribe-ui:/home/transcribe-ui
+ts_transcription_service:
+  image: transcribe-ui/ts-gpu:latest
+  env_file:
+    - .env
+  environment:
+    - DIARIZATION_MODEL=${DIARIZATION_MODEL}
+    - TRANSCRIPTION_MODEL=${TRANSCRIPTION_MODEL}
+    - MAX_CONCURRENT_TRANSFORMS=${MAX_CONCURRENT_TRANSFORMS}
+    - MAX_CONCURRENT_SUMMARIES=${MAX_CONCURRENT_SUMMARIES}
+    - OLLAMA_HOST=${OLLAMA_HOST}
+    - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+  container_name: ts-gpu
+  shm_size: 6gb
+  ports:
+    - "2230:22"
+  volumes:
+  - ${LOCAL_DIRECTORY:-./data}/ts-gpu:/transcribe-ui # Distinct local directory for ts-gpu
+  - ${LOCAL_DIRECTORY:-./data}/ts-gpu-home:/home/transcribe-ui # Separate directory for home files
 #      - transcribe-ui-scripts:/root/scripts
-
-    networks:
-      ts_private_network:
-        ipv4_address: 172.30.1.5
-
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+  networks:
+    ts_private_network:
+      ipv4_address: 172.30.1.5
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: 1
+            capabilities: [gpu]
 
 # Start up the web front end
-  ts_web_service:
-    image: transcribe-ui/ts-web:latest
-    environment:
-      - TS_WEB_SECRET_KEY=${TS_WEB_SECRET_KEY}
-    container_name: ts-web
-    ports:
-      - "5006:5000"
-    volumes:
-      - transcribe-ui:/transcribe-ui
-    networks:
-      ts_private_network:
-        ipv4_address: 172.30.1.2
+ts_web_service:
+  image: transcribe-ui/ts-web:latest
+  env_file:
+    - .env
+  environment:
+    - TS_WEB_SECRET_KEY=${TS_WEB_SECRET_KEY}
+  container_name: ts-web
+  ports:
+    - "5006:5000"
+  volumes:
+    - ${LOCAL_DIRECTORY:-transcribe-ui}/ts-web:/transcribe-ui
+  networks:
+    ts_private_network:
+      ipv4_address: 172.30.1.2
 
 # Start up MeiliSearch
-  ts_meilisearch_service:
-    image: getmeili/meilisearch
-    environment:
-      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
-      - MEILI_HTTP_CORS_ORIGINS=http://172.30.1.11:5000
-      - MEILI_NO_ANALYTICS=true 
-    container_name: ts-meilisearch
-    ports:
-      - "7700:7700"
-    volumes:
-      - transcribe-ui:/transcribe-ui
-      - transcribe-ui:/meili_data
-    networks:
-      ts_private_network:
-        ipv4_address: 172.30.1.12
+ts_meilisearch_service:
+  image: getmeili/meilisearch
+  env_file:
+    - .env
+  environment:
+    - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+    - MEILI_HTTP_CORS_ORIGINS=http://172.30.1.11:5000
+    - MEILI_NO_ANALYTICS=true 
+  container_name: ts-meilisearch
+  ports:
+    - "7700:7700"
+  volumes:
+    - ${LOCAL_DIRECTORY:-./data}/ts-search:/transcribe-ui # Shared directory for transcriptions
+    - ${LOCAL_DIRECTORY:-./data}/ts-search-meili_data:/meili_data # Separate data directory for MeiliSearch
+  networks:
+    ts_private_network:
+      ipv4_address: 172.30.1.12
 
 
-  # # if you want to run ollama locally and have enough vram uncomment this section
-  # # Startup ts-gpt
-  # ts_gpt_service:
-  #   image: ollama/ollama
-  #   container_name: ts-gpt
-  #   ports:
-  #     - "11434:11434"
-  #   volumes:
-  #     - transcribe-ui:/root/.ollama
-  #   networks:
-  #     ts_private_network:
-  #       ipv4_address: 172.30.1.3
+# # if you want to run ollama locally and have enough vram uncomment this section
+# # Startup ts-gpt
+# ts_gpt_service:
+#   image: ollama/ollama
+#   env_file:
+#     - .env
+#   container_name: ts-gpt
+#   ports:
+#     - "11434:11434"
+#   volumes:
+##     - ${LOCAL_DIRECTORY:-transcribe-ui}:/root/.ollama
+#     - ${LOCAL_DIRECTORY:-./data}/ts-gpt:/root/.ollama # GPT model storage
+#   networks:
+#     ts_private_network:
+#       ipv4_address: 172.30.1.3
 
-  #   deploy:
-  #     resources:
-  #       reservations:
-  #         devices:
-  #           - driver: nvidia
-  #             count: 1
-  #             capabilities: [gpu]
+#   deploy:
+#     resources:
+#       reservations:
+#         devices:
+#           - driver: nvidia
+#             count: 1
+#             capabilities: [gpu]
 
 
 networks:
@@ -102,8 +109,8 @@ networks:
 
 
 volumes:
-  transcribe-ui:
-    external: true
+  # transcribe-ui:
+  #   external: true
+
 #  transcribe-ui-scripts:
 #    external: true
-
