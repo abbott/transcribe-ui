@@ -5,6 +5,13 @@ import requests
 import subprocess
 import re
 
+# Get PROJECT_ID environment variable
+PROJECT_ID = os.getenv('PROJECT_ID', 'transcribe-ui')
+OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'transcriptionstream/transcriptionstream')
+
+APP_DIR = os.getenv('APP_DIR', f'/{PROJECT_ID}') 
+SCRIPTS_DIR = os.getenv('SCRIPTS_DIR', f'{APP_DIR}/scripts') 
+
 # Check if both a folder path and API base URL were provided as command line arguments
 if len(sys.argv) < 3:
     print("Please provide a folder path and an API base URL as command line arguments.")
@@ -16,8 +23,9 @@ api_base_url = sys.argv[2]
 # Find the text file with the same name as the folder
 folder_name = os.path.basename(folder_path)
 ## Remove the timestamp (_YYYYMMddhhmmss) from the folder name
-folder_name_without_timestamp = re.sub(r'_[0-9]{14}$', '', folder_name)
-txt_file_name = folder_name_without_timestamp + '.txt'
+#folder_name_without_timestamp = re.sub(r'_[0-9]{14}$', '', folder_name)
+#txt_file_name = folder_name_without_timestamp + '.txt'
+txt_file_name = folder_name + '.txt'
 txt_file_path = os.path.join(folder_path, txt_file_name)
 
 if not os.path.exists(txt_file_path):
@@ -49,7 +57,7 @@ The transcription is as follows
 """
 # JSON payload
 payload = {
-    "model": "transcribe-ui/transcribe-ui",
+    "model": f"{OLLAMA_MODEL}",
     "prompt": prompt_text,
     "stream": False,
     "keep_alive": "5s"
@@ -79,29 +87,38 @@ response = None
 try:
     response = requests.post(request_url, json=payload)
 except Exception as e:
-    print("Error sending request to API endpoint: {}".format(e))
+    print(f"Error sending request to API endpoint: {e}")
     sys.exit(1)
 
-# Check if the request was successful and print or exit accordingly
-if response is not None and response.status_code == 200:
-    # Parse the JSON response
-    json_data = response.json()
-    # Extract the 'response' portion
-    response_text = json_data.get('response', 'No response found')
-    # Print the formatted response text
-    ## we don't really need this
-    ##print(response_text)
+# Check if the request was successful and handle errors
+if response is not None:
+    if response.status_code == 200:
+        # Parse the JSON response
+        try:
+            json_data = response.json()
+            # Extract the 'response' portion
+            response_text = json_data.get('response', 'No response found')
 
-    # Write the summary to a file named summary.txt in the same folder
-    with open(os.path.join(folder_path, 'summary.txt'), 'w', encoding='utf-8') as summary_file:
-        summary_file.write(response_text)
+            # Write the summary to a file named summary.txt in the same folder
+            with open(os.path.join(folder_path, 'summary.txt'), 'w', encoding='utf-8') as summary_file:
+                summary_file.write(response_text)
 
-    # After writing the summary, call index-single.py so the info is indexed with MeiliSearch
-    index_single_script = '/root/scripts/index-single.py'
-    subprocess.run(['python3', index_single_script, folder_path])
+            # After writing the summary, call index-single.py so the info is indexed with MeiliSearch
+            index_single_script = f'{SCRIPTS_DIR}/index-single.py'
+            subprocess.run(['python3', index_single_script, folder_path])
 
-else:
-    if response is not None:
-        print("Request failed with status code:", response.status_code)
-        print("Error message from API:", json_data.get('error', ''))
+        except ValueError:
+            print(f"Error: Failed to parse JSON response for {txt_file_path}")
+            sys.exit(1)
+
+    else:
+        print(f"Request failed with status code: {response.status_code}")
+        try:
+            json_data = response.json()
+            print("Error message from API:", json_data.get('error', ''))
+        except ValueError:
+            print(f"Error: Non-JSON response from API for {txt_file_path}")
         sys.exit(1)
+else:
+    print(f"No response received from the API for {txt_file_path}")
+    sys.exit(1)
