@@ -1,5 +1,4 @@
 # syntax=docker/dockerfile:1.6.0
-# usage: `docker build -t cuda-pytorch-ai:23.12.240904 --no-cache --progress=plain . &> build.log`
 
 ### Base stage for dependencies and environment setup ###
 FROM nvcr.io/nvidia/pytorch:23.12-py3
@@ -27,12 +26,6 @@ ENV LANG=en_US.UTF-8 \
 # configure as root
 SHELL ["/usr/bin/bash", "--login", "-c"]
 
-
-#COPY /home/bruce/_code/_pods/_support/_scripts/harden_debian.conf /etc/harden_debian.conf
-#COPY /home/bruce/_code/_pods/_support/_scripts/harden_debian.sh /root/_scripts/harden_debian.sh 
-#RUN chmod -x /root/_scripts/harden_debian.sh
-
-
 # Install dependencies
 RUN mv /root/.cache/torch_extensions /opt/torch_extensions \
         && apt-get update --fix-missing \
@@ -47,7 +40,6 @@ RUN mv /root/.cache/torch_extensions /opt/torch_extensions \
         && pip3 install --no-input --upgrade pip \
         && pip3 install --no-input --upgrade bpytop cookiecutter ffmpeg-python pipdeptree setuptools \
         thefuck tldr typing_extensions
-
 
 COPY ./test.wav /test.wav
 
@@ -67,7 +59,6 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m -s /bin/bash -g $USERNAME -G sudo $USERNAME \
     && echo $USERNAME ALL=\(ALL\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME
-
 
 # Add this to your Dockerfile in `ts-gpu` directory
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh

@@ -5,15 +5,15 @@ import grp
 
 
 # Use the PROJECT_ID environment variable from the .env file
-PROJECT_ID = os.getenv('PROJECT_ID', 'transcribe-ui')  # Fallback to 'transcribe-ui' if PROJECT_ID is not set
+PROJECT_ID = os.getenv('PROJECT_ID', 'transcribe-ui')  
 
-APP_DIR = os.getenv('APP_DIR', f'/{PROJECT_ID}')  # Fallback to 'transcribe-ui' if PROJECT_ID is not set
+APP_DIR = os.getenv('APP_DIR', f'/{PROJECT_ID}') 
 SCRIPTS_DIR = os.getenv('SCRIPTS_DIR', f'{APP_DIR}/scripts') 
 
 TRANSCRIBED_DIR = f'{APP_DIR}/transcribed'
 
-OLLAMA_HOST = os.getenv('OLLAMA_HOST', '172.30.1.3')  # Fallback to default IP
-OLLAMA_PORT = os.getenv('OLLAMA_PORT', '11434')  # Fallback to default IP
+OLLAMA_HOST = os.getenv('OLLAMA_HOST', '172.30.1.3') 
+OLLAMA_PORT = os.getenv('OLLAMA_PORT', '11434') 
 
 DISABLE_OLLAMA = os.getenv('DISABLE_OLLAMA', 'false').lower() == 'true'  # Check if Ollama is disabled
 
@@ -49,7 +49,6 @@ def scan_and_summarize(base_directory):
 
                         # Call the external script with the directory path and the URL
                         command = f'python3 {SCRIPTS_DIR}/ts-summarize.py {path} http://{OLLAMA_HOST}:{OLLAMA_PORT}'
-                        # command = f'python3 {SCRIPTS_DIR}/ts-summarize.py {path} http://{OLLAMA_HOST}:11434'
                         subprocess.run(command, shell=True)
 
                         # Change the ownership of the new summary.txt file

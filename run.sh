@@ -28,7 +28,6 @@ if [ "$answer" != "${answer#[Yy]}" ] ;then
     if [ "$DISABLE_OLLAMA" != "true" ]; then
         echo "Downloading Mistral model"
         curl -X POST http://$OLLAMA_HOST:$OLLAMA_PORT/api/pull -d '{"name": "'$OLLAMA_MODEL'"}'
-        # curl -X POST http://$OLLAMA_HOST:11434/api/pull -d '{"name": "'$PROJECT_ID'/'$PROJECT_ID'"}'
     else
         echo "DISABLE_OLLAMA is true, skipping Mistral download."
     fi

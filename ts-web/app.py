@@ -8,14 +8,10 @@ app = Flask(__name__)
 # Use the TS_WEB_SECRET_KEY environment variable as the secret key, and the fallback
 app.secret_key = os.getenv('TS_WEB_SECRET_KEY', 'some_secret_key')
 
-# Use the PROJECT_ID environment variable from the .env file
 PROJECT_ID = os.getenv('PROJECT_ID', 'transcribe-ui') 
-
-# Use environment variables for paths, with defaults that utilize the PROJECT_ID variable
 APP_DIR = os.getenv('APP_DIR', f'/{PROJECT_ID}')
 UPLOAD_DIR = os.getenv('UPLOAD_DIR', f'{APP_DIR}/incoming')
 TRANSCRIBED_DIR = os.getenv('TRANSCRIBED_DIR', f'{APP_DIR}/transcribed')
-
 
 allowed_extensions = set(['mp3', 'wav', 'ogg', 'flac'])
 

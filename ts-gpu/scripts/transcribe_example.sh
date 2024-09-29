@@ -1,6 +1,4 @@
 #!/bin/bash
-# transcription stream transcription and diarization example script - 12/2023
-## 1/2024: Summaries migrated to ts-control.sh, summaries created asynchronously.
 
 # Check if required environment variables are set
 if [ -z "$DIARIZATION_MODEL" ] || [ -z "$TRANSCRIPTION_MODEL" ] || [ -z "$PROJECT_ID" ]; then
